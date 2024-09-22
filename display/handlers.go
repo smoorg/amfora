@@ -506,13 +506,13 @@ func handleURL(t *tab, u string, numRedirects int) (string, bool) {
 
 		err = openssl.CallOpenSSL(t.page.URL, username, int(daysInt))
 		if err != nil {
-			logger.Logger.Fatal(err)
-			return ret(err.Error(), true)
+			logger.Logger.Println(err)
+			return ret(err.Error(), false)
 		}
 
 		err = client.CreateNewCertRow(t.page.URL)
 		if err != nil {
-			logger.Logger.Fatal(err)
+			logger.Logger.Println(err)
 			return ret("", false)
 		}
 

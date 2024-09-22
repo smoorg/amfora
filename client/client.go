@@ -3,7 +3,6 @@ package client
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"net/url"
@@ -51,7 +50,14 @@ func Init() error {
 	}
 
 	// Populate config maps
+	if err := LoadCertsAndKeys(); err != nil {
+	    return err
+	}
 
+	return nil
+}
+
+func LoadCertsAndKeys() error {
 	certsViper := viper.Sub("auth.certs")
 	for _, certURL := range certsViper.AllKeys() {
 		// Normalize URL so that it can be matched no matter how it was written
@@ -73,7 +79,6 @@ func Init() error {
 		}
 		confKeys[certMapKey{pu.Host, pu.Path}] = keysViper.GetString(keyURL)
 	}
-
 	return nil
 }
 
@@ -218,11 +223,8 @@ func FetchWithProxy(proxyHostname, proxyPort, u string) (*gemini.Response, error
 }
 
 func CreateNewCertRow(url string) error {
-	cut, ok := strings.CutPrefix(url, "gemini://")
-	if !ok {
-		return errors.New(fmt.Sprint("invalid url", url))
-	}
-	url = cut
+	url, _ = strings.CutPrefix(url, "gemini://")
+	url, _ = strings.CutSuffix(url, "/")
 
 	dir, err := openssl.GetCertsDir()
 	if err != nil {
@@ -239,10 +241,9 @@ func CreateNewCertRow(url string) error {
 		logger.Logger.Println(err)
 		return err
 	}
-	if err = viper.WriteConfig(); err != nil {
-		logger.Logger.Println(err)
-		return err
-	}
 
+	// Refresh the config
+	viper.ReadInConfig()
+	LoadCertsAndKeys()
 	return nil
 }
